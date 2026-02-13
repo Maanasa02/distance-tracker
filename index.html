@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distance Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Times New Roman", Times, serif;
+      background: #000;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 380px;
+      min-width: 380px;
+      background: #000;
+      border-right: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid #333;
+    }
+
+    .sidebar-header h1 {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-header p {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 13px;
+      color: #888;
+      font-style: italic;
+    }
+
+    .section {
+      padding: 20px 24px;
+      border-bottom: 1px solid #333;
+    }
+
+    .section-label {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    input[type="text"] {
+      font-family: "Times New Roman", Times, serif;
+      width: 100%;
+      padding: 10px 12px;
+      background: #111;
+      border: 1px solid #333;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #666;
+    }
+
+    input[type="text"]::placeholder {
+      color: #555;
+      font-style: italic;
+    }
+
+    button {
+      font-family: "Times New Roman", Times, serif;
+      cursor: pointer;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background: #fff;
+      color: #000;
+      border: 1px solid #fff;
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      background: #ddd;
+      border-color: #ddd;
+    }
+
+    .btn-primary:disabled {
+      background: #333;
+      border-color: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .btn-small {
+      padding: 4px 10px;
+      background: transparent;
+      color: #888;
+      border: 1px solid #444;
+      font-size: 11px;
+    }
+
+    .btn-small:hover {
+      color: #fff;
+      border-color: #888;
+    }
+
+    .btn-danger {
+      color: #999;
+      border-color: #444;
+    }
+
+    .btn-danger:hover {
+      color: #fff;
+      border-color: #fff;
+    }
+
+    /* Autocomplete dropdown */
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #111;
+      border: 1px solid #333;
+      border-top: none;
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .autocomplete-item {
+      padding: 10px 12px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 13px;
+      color: #ccc;
+      cursor: pointer;
+      border-bottom: 1px solid #222;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .autocomplete-item:hover {
+      background: #222;
+      color: #fff;
+    }
+
+    /* Your location card */
+    .your-location-card {
+      background: #111;
+      border: 1px solid #333;
+      padding: 16px;
+      margin-top: 8px;
+    }
+
+    .your-location-card .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .your-location-card .card-name {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .your-location-card .card-address {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+
+    .your-location-card .card-distance {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .your-location-card .card-distance-label {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Home status */
+    .home-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .home-status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #555;
+    }
+
+    .home-status .dot.active {
+      background: #fff;
+    }
+
+    .home-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 30px 24px;
+      text-align: center;
+      color: #555;
+      font-style: italic;
+      font-size: 14px;
+    }
+
+    /* Map container */
+    .map-container {
+      flex: 1;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Grayscale map tiles */
+    .leaflet-tile-pane {
+      filter: grayscale(100%) contrast(1.1) brightness(0.9);
+    }
+
+    /* Override Leaflet popup styles */
+    .leaflet-popup-content-wrapper {
+      font-family: "Times New Roman", Times, serif;
+      background: #000;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    }
+
+    .leaflet-popup-tip {
+      background: #000;
+      border: 1px solid #444;
+      box-shadow: none;
+    }
+
+    .leaflet-popup-content {
+      margin: 12px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .popup-title {
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .popup-address {
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .popup-distance {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .leaflet-popup-close-button {
+      color: #888 !important;
+      font-family: "Times New Roman", Times, serif;
+    }
+
+    .leaflet-popup-close-button:hover {
+      color: #fff !important;
+    }
+
+    /* Attribution styling */
+    .leaflet-control-attribution {
+      font-family: "Times New Roman", Times, serif !important;
+      background: rgba(0,0,0,0.7) !important;
+      color: #888 !important;
+      font-size: 10px !important;
+    }
+
+    .leaflet-control-attribution a {
+      color: #aaa !important;
+    }
+
+    /* Zoom control styling */
+    .leaflet-control-zoom a {
+      background: #000 !important;
+      color: #fff !important;
+      border: 1px solid #444 !important;
+      font-family: "Times New Roman", Times, serif !important;
+    }
+
+    .leaflet-control-zoom a:hover {
+      background: #222 !important;
+    }
+
+    /* Scrollbar styling */
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+      background: #000;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: #333;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Loading spinner */
+    .loading {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #333;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1>Distance Tracker</h1>
+      <p>Straight-line distance calculator</p>
+    </div>
+
+    <!-- My Home Section -->
+    <div class="section">
+      <div class="section-label">My Home</div>
+      <div class="input-group">
+        <input
+          type="text"
+          id="homeAddress"
+          value="Ramaniyam Gallery, 8A, 18/1, SH 49, Thiruvalluvar Nagar, Thiruvanmiyur, Chennai, Tamil Nadu 600041"
+          placeholder="Enter your home address..."
+        />
+      </div>
+      <div class="home-actions">
+        <button class="btn-small" id="updateHomeBtn" onclick="geocodeHome()">Update Home</button>
+      </div>
+      <div class="home-status" id="homeStatus">
+        <span class="dot" id="homeDot"></span>
+        <span id="homeStatusText">Locating home...</span>
+      </div>
+    </div>
+
+    <!-- Your Location Section -->
+    <div class="section">
+      <div class="section-label">Your Location</div>
+      <div class="input-group" id="addressInputGroup">
+        <input
+          type="text"
+          id="personAddress"
+          placeholder="Type an address to search..."
+          autocomplete="off"
+        />
+        <div class="autocomplete-list" id="autocompleteList" style="display:none;"></div>
+      </div>
+      <button class="btn-primary" id="addBtn" onclick="addPerson()" disabled>Add</button>
+    </div>
+
+    <!-- Your Location Card -->
+    <div id="personCardContainer">
+      <div class="empty-state" id="emptyState">
+        Enter an address above to see the distance.
+      </div>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <div id="map"></div>
+  </div>
+
+  <script>
+    // ─── State ───────────────────────────────────────────────────────
+    let homeCoords = null;
+    let homeMarker = null;
+    let personData = null;       // { address, lat, lng, distance }
+    let personMarker = null;
+    let distanceLine = null;
+    let selectedResult = null;   // from autocomplete
+    let debounceTimer = null;
+
+    // ─── Map Init ────────────────────────────────────────────────────
+    const map = L.map('map', {
+      zoomControl: true
+    }).setView([13.0, 80.25], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // ─── Custom Icons ────────────────────────────────────────────────
+    function createSVGIcon(label, isHome) {
+      const size = isHome ? 36 : 32;
+      const svg = isHome
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 36 36">
+            <polygon points="18,4 32,18 27,18 27,32 9,32 9,18 4,18" fill="#000" stroke="#fff" stroke-width="2"/>
+            <text x="18" y="25" text-anchor="middle" fill="#fff" font-family="Times New Roman,serif" font-size="9" font-weight="bold">HOME</text>
+          </svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 40">
+            <path d="M16,2 C9,2 3,8 3,15 C3,24 16,38 16,38 C16,38 29,24 29,15 C29,8 23,2 16,2 Z" fill="#000" stroke="#fff" stroke-width="2"/>
+            <text x="16" y="20" text-anchor="middle" fill="#fff" font-family="Times New Roman,serif" font-size="9" font-weight="bold">YOU</text>
+          </svg>`;
+
+      return L.divIcon({
+        html: svg,
+        className: '',
+        iconSize: [size, isHome ? size : size + 8],
+        iconAnchor: [size / 2, isHome ? size / 2 : size + 8],
+        popupAnchor: [0, isHome ? -size / 2 : -(size + 8)]
+      });
+    }
+
+    // ─── Haversine ───────────────────────────────────────────────────
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) *
+                Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // ─── Geocode via Nominatim ───────────────────────────────────────
+    async function geocode(address) {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'DistanceTrackerApp/1.0' }
+      });
+      const data = await res.json();
+      if (data.length === 0) return null;
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
+    }
+
+    // ─── Geocode Home ────────────────────────────────────────────────
+    async function geocodeHome() {
+      const address = document.getElementById('homeAddress').value.trim();
+      if (!address) return;
+
+      const statusText = document.getElementById('homeStatusText');
+      const dot = document.getElementById('homeDot');
+      statusText.textContent = 'Locating home...';
+      dot.classList.remove('active');
+
+      const result = await geocode(address);
+      if (result) {
+        homeCoords = { lat: result.lat, lng: result.lng };
+
+        if (homeMarker) map.removeLayer(homeMarker);
+        homeMarker = L.marker([result.lat, result.lng], { icon: createSVGIcon('HOME', true) }).addTo(map);
+        homeMarker.bindPopup(`
+          <div class="popup-title">Home</div>
+          <div class="popup-address">${address}</div>
+        `);
+
+        if (!personData) {
+          map.setView([result.lat, result.lng], 14);
+        }
+
+        statusText.textContent = 'Home located';
+        dot.classList.add('active');
+
+        // Recalculate distance if person exists
+        if (personData) {
+          updateDistance();
+        }
+      } else {
+        statusText.textContent = 'Address not found';
+        dot.classList.remove('active');
+      }
+    }
+
+    // ─── Autocomplete ────────────────────────────────────────────────
+    const personInput = document.getElementById('personAddress');
+    const autocompleteList = document.getElementById('autocompleteList');
+    const addBtn = document.getElementById('addBtn');
+
+    personInput.addEventListener('input', function () {
+      const query = this.value.trim();
+      selectedResult = null;
+      addBtn.disabled = true;
+
+      if (debounceTimer) clearTimeout(debounceTimer);
+
+      if (query.length < 3) {
+        autocompleteList.style.display = 'none';
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
+          const res = await fetch(url, {
+            headers: { 'User-Agent': 'DistanceTrackerApp/1.0' }
+          });
+          const data = await res.json();
+
+          if (data.length === 0) {
+            autocompleteList.style.display = 'none';
+            return;
+          }
+
+          autocompleteList.innerHTML = '';
+          data.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.textContent = item.display_name;
+            div.addEventListener('click', () => {
+              personInput.value = item.display_name;
+              selectedResult = {
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon),
+                display: item.display_name
+              };
+              autocompleteList.style.display = 'none';
+              addBtn.disabled = false;
+            });
+            autocompleteList.appendChild(div);
+          });
+          autocompleteList.style.display = 'block';
+        } catch (e) {
+          autocompleteList.style.display = 'none';
+        }
+      }, 300);
+    });
+
+    // Close autocomplete on outside click
+    document.addEventListener('click', function (e) {
+      if (!document.getElementById('addressInputGroup').contains(e.target)) {
+        autocompleteList.style.display = 'none';
+      }
+    });
+
+    // ─── Add Person ──────────────────────────────────────────────────
+    function addPerson() {
+      if (!selectedResult) return;
+
+      personData = {
+        address: selectedResult.display,
+        lat: selectedResult.lat,
+        lng: selectedResult.lng,
+        distance: null
+      };
+
+      // Clear input
+      personInput.value = '';
+      selectedResult = null;
+      addBtn.disabled = true;
+
+      // Place marker
+      if (personMarker) map.removeLayer(personMarker);
+      personMarker = L.marker([personData.lat, personData.lng], {
+        icon: createSVGIcon('YOU', false)
+      }).addTo(map);
+
+      // Calculate distance
+      updateDistance();
+
+      // Render card
+      renderPersonCard();
+    }
+
+    // ─── Update Distance ─────────────────────────────────────────────
+    function updateDistance() {
+      if (!homeCoords || !personData) return;
+
+      const dist = haversineDistance(homeCoords.lat, homeCoords.lng, personData.lat, personData.lng);
+      personData.distance = dist;
+
+      // Update marker popup
+      if (personMarker) {
+        personMarker.bindPopup(`
+          <div class="popup-title">You</div>
+          <div class="popup-address">${personData.address}</div>
+          <div class="popup-distance">${dist.toFixed(2)} km</div>
+        `);
+      }
+
+      // Draw dashed line
+      if (distanceLine) map.removeLayer(distanceLine);
+      distanceLine = L.polyline(
+        [[homeCoords.lat, homeCoords.lng], [personData.lat, personData.lng]],
+        { color: '#fff', weight: 1.5, dashArray: '8, 6', opacity: 0.7 }
+      ).addTo(map);
+
+      // Fit map to show both markers
+      const group = L.featureGroup([homeMarker, personMarker]);
+      map.fitBounds(group.getBounds().pad(0.3));
+
+      // Re-render card
+      renderPersonCard();
+    }
+
+    // ─── Render Person Card ──────────────────────────────────────────
+    function renderPersonCard() {
+      const container = document.getElementById('personCardContainer');
+
+      if (!personData) {
+        container.innerHTML = '<div class="empty-state" id="emptyState">Enter an address above to see the distance.</div>';
+        return;
+      }
+
+      const distDisplay = personData.distance !== null
+        ? `<div class="card-distance">${personData.distance.toFixed(2)} km</div>
+           <div class="card-distance-label">Straight-line distance</div>`
+        : `<div class="card-distance-label">Calculating...</div>`;
+
+      container.innerHTML = `
+        <div class="section">
+          <div class="your-location-card">
+            <div class="card-header">
+              <div>
+                <div class="card-name">You</div>
+                <div class="card-address">${personData.address}</div>
+              </div>
+              <button class="btn-small btn-danger" onclick="removePerson()" title="Remove">Remove</button>
+            </div>
+            ${distDisplay}
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── Remove Person ───────────────────────────────────────────────
+    function removePerson() {
+      if (personMarker) map.removeLayer(personMarker);
+      if (distanceLine) map.removeLayer(distanceLine);
+      personMarker = null;
+      distanceLine = null;
+      personData = null;
+      renderPersonCard();
+
+      if (homeCoords) {
+        map.setView([homeCoords.lat, homeCoords.lng], 14);
+      }
+    }
+
+    // ─── Init ────────────────────────────────────────────────────────
+    geocodeHome();
+  </script>
+</body>
+</html>
