@@ -673,8 +673,9 @@
     </div>
 
     <!-- Journey Section -->
-    <div class="section" id="journeySection" style="display:none;">
+    <div class="section" id="journeySection">
       <div class="section-label">Journey Visualization</div>
+      <div id="journeyWaiting" style="color:#555; font-style:italic; font-size:13px;">Add your location above to see the road &amp; ship travel route.</div>
       <div class="journey-stats" id="journeyStats"></div>
       <div class="journey-progress" id="journeyProgress" style="display:none;">
         <div class="progress-bar">
@@ -683,7 +684,7 @@
         <div class="segment-indicator" id="segmentIndicator">Preparing route...</div>
       </div>
       <div id="journeyCompleteMsg" style="display:none;"></div>
-      <button class="btn-journey" id="startJourneyBtn" onclick="startJourney()">Start Journey</button>
+      <button class="btn-journey" id="startJourneyBtn" onclick="startJourney()" style="display:none;">Start Journey</button>
       <button class="btn-reset" id="resetJourneyBtn" onclick="resetJourney()" style="display:none;">Reset Journey</button>
     </div>
 
@@ -1115,14 +1116,19 @@
       map.fitBounds(group.getBounds().pad(0.3));
 
       renderPersonCard();
+
+      // Auto-show journey section and start animation
+      showJourneySection();
+      if (!journey.isAnimating && !journey.isComplete) {
+        setTimeout(() => startJourney(), 800);
+      }
     }
 
     // ─── Show Journey Section ────────────────────────────────────────
     function showJourneySection() {
       if (!homeCoords || !personData) return;
 
-      const journeySection = document.getElementById('journeySection');
-      journeySection.style.display = 'block';
+      document.getElementById('journeyWaiting').style.display = 'none';
 
       // Pre-calculate route to show stats
       const numWaypoints = 300;
@@ -1460,8 +1466,13 @@
       personData = null;
       renderPersonCard();
 
-      // Hide journey section and legend
-      document.getElementById('journeySection').style.display = 'none';
+      // Reset journey section and legend
+      document.getElementById('journeyWaiting').style.display = 'block';
+      document.getElementById('journeyStats').innerHTML = '';
+      document.getElementById('journeyProgress').style.display = 'none';
+      document.getElementById('journeyCompleteMsg').style.display = 'none';
+      document.getElementById('startJourneyBtn').style.display = 'none';
+      document.getElementById('resetJourneyBtn').style.display = 'none';
       document.getElementById('mapLegend').style.display = 'none';
 
       if (homeCoords) {
