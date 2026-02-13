@@ -1165,6 +1165,20 @@
       document.getElementById('journeyCompleteMsg').style.display = 'none';
     }
 
+    // ─── Zoom Level for Distance ────────────────────────────────────
+    function getJourneyZoom(totalDistKm, segmentType) {
+      let base;
+      if (totalDistKm < 50) base = 13;
+      else if (totalDistKm < 200) base = 11;
+      else if (totalDistKm < 800) base = 9;
+      else if (totalDistKm < 3000) base = 7;
+      else if (totalDistKm < 8000) base = 5;
+      else base = 4;
+      // Ship segments zoom out slightly to show the open water
+      if (segmentType === 'ship') base = Math.max(3, base - 1);
+      return base;
+    }
+
     // ─── Start Journey Animation ─────────────────────────────────────
     function startJourney() {
       if (!homeCoords || !personData) return;
@@ -1184,29 +1198,33 @@
       const points = generateGreatCirclePoints(homeCoords, personData, numWaypoints);
       const segments = classifyRoute(points);
 
+      // Calculate total distance for zoom decisions
+      const totalDist = haversineDistance(homeCoords.lat, homeCoords.lng, personData.lat, personData.lng);
+
       journey.segments = segments;
       journey.allPoints = points;
       journey.currentPointIndex = 0;
       journey.isAnimating = true;
       journey.isComplete = false;
+      journey.totalDist = totalDist;
+      journey.currentSegmentType = segments.length > 0 ? segments[0].type : 'road';
 
       // Create polylines for each segment (initially empty)
       let globalIndex = 0;
       segments.forEach(seg => {
         const color = seg.type === 'road' ? '#D4A843' : '#64B5F6';
         const dashArray = seg.type === 'road' ? null : '8, 6';
-        const weight = seg.type === 'road' ? 3 : 3;
 
         // Shadow line for glow effect
         const shadowLine = L.polyline([], {
           color: color,
-          weight: 8,
-          opacity: 0.15
+          weight: 10,
+          opacity: 0.2
         }).addTo(map);
 
         const polyline = L.polyline([], {
           color: color,
-          weight: weight,
+          weight: 4,
           opacity: 0.9,
           dashArray: dashArray,
           lineCap: 'round',
@@ -1232,12 +1250,14 @@
       document.getElementById('startJourneyBtn').disabled = true;
       document.getElementById('startJourneyBtn').textContent = 'Animating...';
 
-      // Fit map to show entire route
-      const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
-      map.fitBounds(bounds.pad(0.15));
+      // Zoom into home location first, then start animating
+      const startZoom = getJourneyZoom(totalDist, startType);
+      map.flyTo([homeCoords.lat, homeCoords.lng], startZoom, { duration: 1.5 });
 
-      // Start animation loop
-      animateStep();
+      // Wait for fly animation to finish, then begin the path drawing
+      setTimeout(() => {
+        if (journey.isAnimating) animateStep();
+      }, 1800);
     }
 
     function createVehicleIcon(type) {
@@ -1266,6 +1286,7 @@
       }
 
       const point = journey.allPoints[journey.currentPointIndex];
+      let currentSegType = journey.currentSegmentType;
 
       // Find which segment this point belongs to
       let cumulative = 0;
@@ -1275,14 +1296,16 @@
 
         if (journey.currentPointIndex < segEnd) {
           const localIndex = journey.currentPointIndex - cumulative;
+          currentSegType = seg.type;
 
           // Add point to polyline
           journey.polylines[i].main.addLatLng([point.lat, point.lng]);
           journey.polylines[i].shadow.addLatLng([point.lat, point.lng]);
 
-          // Update vehicle icon if segment type changed
+          // Segment transition: update icon, add port marker, adjust zoom
           if (localIndex === 0 && i > 0) {
             journey.vehicleMarker.setIcon(createVehicleIcon(seg.type));
+            journey.currentSegmentType = seg.type;
 
             // Add port marker at transition point
             const portMarker = L.marker([point.lat, point.lng], {
@@ -1294,6 +1317,10 @@
               <div class="popup-address">Transition: ${journey.segments[i - 1].type} to ${seg.type}</div>
             `);
             journey.portMarkers.push(portMarker);
+
+            // Smoothly adjust zoom for new segment type
+            const newZoom = getJourneyZoom(journey.totalDist, seg.type);
+            map.flyTo([point.lat, point.lng], newZoom, { duration: 1.0, easeLinearity: 0.5 });
           }
 
           // Update segment indicator
@@ -1309,14 +1336,17 @@
       // Move vehicle
       journey.vehicleMarker.setLatLng([point.lat, point.lng]);
 
+      // Pan camera to follow the vehicle (no animation, instant tracking)
+      map.setView([point.lat, point.lng], map.getZoom(), { animate: false });
+
       // Update progress bar
       const progress = (journey.currentPointIndex / journey.allPoints.length) * 100;
       document.getElementById('progressFill').style.width = progress + '%';
 
       journey.currentPointIndex++;
 
-      // Animation speed: faster for longer routes, minimum 15ms per frame
-      const baseDelay = Math.max(15, Math.min(50, 12000 / journey.allPoints.length));
+      // Animation speed: ~40ms per frame = ~12 seconds for 300 points
+      const baseDelay = 40;
       journey.animationTimer = setTimeout(() => requestAnimationFrame(animateStep), baseDelay);
     }
 
@@ -1344,7 +1374,7 @@
         journey.vehicleMarker = null;
       }
 
-      // Add arrival pulse at destination
+      // Add arrival pulse at destination and zoom in close
       if (personData) {
         const arrivalIcon = L.divIcon({
           html: `<div style="position:relative; width:40px; height:40px;">
@@ -1363,10 +1393,8 @@
 
         journey.portMarkers.push(arrivalMarker);
 
-        // Zoom to destination
-        setTimeout(() => {
-          map.flyTo([personData.lat, personData.lng], 10, { duration: 2 });
-        }, 500);
+        // Cinematic zoom into destination
+        map.flyTo([personData.lat, personData.lng], 14, { duration: 2.5 });
       }
     }
 
