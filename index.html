@@ -262,6 +262,134 @@
       font-size: 14px;
     }
 
+    /* Journey section */
+    .journey-stats {
+      margin-bottom: 16px;
+    }
+
+    .journey-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 13px;
+      color: #ccc;
+    }
+
+    .journey-stat-row .stat-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .journey-stat-row .stat-value {
+      font-weight: 700;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .stat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .stat-dot.road {
+      background: #D4A843;
+    }
+
+    .stat-dot.ship {
+      background: #64B5F6;
+    }
+
+    .stat-dot.total {
+      background: #fff;
+    }
+
+    .journey-progress {
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #222;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #D4A843, #64B5F6);
+      transition: width 0.1s linear;
+    }
+
+    .segment-indicator {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    .segment-indicator.road {
+      color: #D4A843;
+    }
+
+    .segment-indicator.ship {
+      color: #64B5F6;
+    }
+
+    .journey-complete-msg {
+      text-align: center;
+      padding: 12px;
+      background: #111;
+      border: 1px solid #333;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #D4A843;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .btn-journey {
+      width: 100%;
+      padding: 10px;
+      background: #D4A843;
+      color: #000;
+      border: 1px solid #D4A843;
+      font-weight: 700;
+    }
+
+    .btn-journey:hover {
+      background: #c4983a;
+      border-color: #c4983a;
+    }
+
+    .btn-journey:disabled {
+      background: #333;
+      border-color: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .btn-reset {
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      color: #888;
+      border: 1px solid #444;
+      font-weight: 400;
+      margin-top: 8px;
+    }
+
+    .btn-reset:hover {
+      color: #fff;
+      border-color: #888;
+    }
+
     /* Map container */
     .map-container {
       flex: 1;
@@ -271,6 +399,120 @@
     #map {
       width: 100%;
       height: 100%;
+    }
+
+    /* Map legend */
+    .map-legend {
+      position: absolute;
+      bottom: 30px;
+      left: 16px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid #444;
+      padding: 12px 16px;
+      z-index: 1000;
+      font-family: "Times New Roman", Times, serif;
+    }
+
+    .legend-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    .legend-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .legend-line {
+      width: 24px;
+      height: 3px;
+      display: inline-block;
+    }
+
+    .legend-line.road {
+      background: #D4A843;
+    }
+
+    .legend-line.ship {
+      background: #64B5F6;
+      background: repeating-linear-gradient(
+        90deg,
+        #64B5F6 0px,
+        #64B5F6 6px,
+        transparent 6px,
+        transparent 10px
+      );
+    }
+
+    .legend-line.port-line {
+      width: 10px;
+      height: 10px;
+      background: none;
+      border: 2px solid #fff;
+      border-radius: 50%;
+    }
+
+    /* Vehicle marker */
+    .vehicle-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      animation: vehiclePulse 1.2s ease-in-out infinite;
+      position: relative;
+    }
+
+    .vehicle-dot.road {
+      background: #D4A843;
+      box-shadow: 0 0 12px rgba(212, 168, 67, 0.6);
+    }
+
+    .vehicle-dot.ship {
+      background: #64B5F6;
+      box-shadow: 0 0 12px rgba(100, 181, 246, 0.6);
+    }
+
+    @keyframes vehiclePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+
+    /* Port marker */
+    .port-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: #000;
+    }
+
+    /* Destination arrival pulse */
+    .arrival-ring {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #D4A843;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: arrivalPulse 1.5s ease-out infinite;
+    }
+
+    @keyframes arrivalPulse {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
     }
 
     /* Grayscale map tiles */
@@ -392,7 +634,7 @@
   <div class="sidebar">
     <div class="sidebar-header">
       <h1>Distance Tracker</h1>
-      <p>Straight-line distance calculator</p>
+      <p>Road &amp; ship travel visualizer</p>
     </div>
 
     <!-- My Home Section -->
@@ -430,27 +672,134 @@
       <button class="btn-primary" id="addBtn" onclick="addPerson()" disabled>Add</button>
     </div>
 
+    <!-- Journey Section -->
+    <div class="section" id="journeySection" style="display:none;">
+      <div class="section-label">Journey Visualization</div>
+      <div class="journey-stats" id="journeyStats"></div>
+      <div class="journey-progress" id="journeyProgress" style="display:none;">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="segment-indicator" id="segmentIndicator">Preparing route...</div>
+      </div>
+      <div id="journeyCompleteMsg" style="display:none;"></div>
+      <button class="btn-journey" id="startJourneyBtn" onclick="startJourney()">Start Journey</button>
+      <button class="btn-reset" id="resetJourneyBtn" onclick="resetJourney()" style="display:none;">Reset Journey</button>
+    </div>
+
     <!-- Your Location Card -->
     <div id="personCardContainer">
       <div class="empty-state" id="emptyState">
-        Enter an address above to see the distance.
+        Enter an address above to see the distance and travel route.
       </div>
     </div>
   </div>
 
   <div class="map-container">
     <div id="map"></div>
+    <div class="map-legend" id="mapLegend" style="display:none;">
+      <div class="legend-title">Travel Mode</div>
+      <div class="legend-item">
+        <span class="legend-line road"></span>
+        <span>By Road</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line ship"></span>
+        <span>By Ship</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line port-line"></span>
+        <span>Port / Transition</span>
+      </div>
+    </div>
   </div>
 
   <script>
+    // ─── Land Regions (rough bounding boxes) ──────────────────────────
+    const LAND_REGIONS = [
+      // North America
+      { minLat: 24, maxLat: 50, minLng: -125, maxLng: -66 },
+      { minLat: 50, maxLat: 72, minLng: -140, maxLng: -60 },
+      { minLat: 54, maxLat: 72, minLng: -170, maxLng: -130 },
+      // Mexico & Central America
+      { minLat: 14, maxLat: 33, minLng: -118, maxLng: -86 },
+      { minLat: 7, maxLat: 18, minLng: -92, maxLng: -77 },
+      // South America
+      { minLat: -56, maxLat: 12, minLng: -82, maxLng: -35 },
+      // Western Europe
+      { minLat: 36, maxLat: 60, minLng: -10, maxLng: 25 },
+      // Scandinavia & Northern Europe
+      { minLat: 55, maxLat: 71, minLng: 5, maxLng: 32 },
+      // Eastern Europe
+      { minLat: 42, maxLat: 60, minLng: 20, maxLng: 45 },
+      // Russia
+      { minLat: 50, maxLat: 75, minLng: 30, maxLng: 180 },
+      { minLat: 45, maxLat: 70, minLng: 28, maxLng: 60 },
+      // North Africa
+      { minLat: 18, maxLat: 37, minLng: -18, maxLng: 40 },
+      // Sub-Saharan Africa
+      { minLat: 4, maxLat: 18, minLng: -18, maxLng: 16 },
+      { minLat: -12, maxLat: 18, minLng: 16, maxLng: 52 },
+      { minLat: -35, maxLat: 0, minLng: 10, maxLng: 42 },
+      // Middle East
+      { minLat: 22, maxLat: 42, minLng: 32, maxLng: 60 },
+      // Arabian Peninsula
+      { minLat: 12, maxLat: 32, minLng: 35, maxLng: 60 },
+      // Iran / Afghanistan / Pakistan
+      { minLat: 24, maxLat: 40, minLng: 44, maxLng: 75 },
+      // Central Asia
+      { minLat: 35, maxLat: 55, minLng: 50, maxLng: 90 },
+      // Indian Subcontinent
+      { minLat: 8, maxLat: 35, minLng: 68, maxLng: 92 },
+      // Sri Lanka
+      { minLat: 5.9, maxLat: 9.9, minLng: 79.5, maxLng: 82 },
+      // China / Mongolia
+      { minLat: 18, maxLat: 54, minLng: 73, maxLng: 135 },
+      // Southeast Asia (mainland)
+      { minLat: 5, maxLat: 28, minLng: 92, maxLng: 109 },
+      // Korean Peninsula
+      { minLat: 33, maxLat: 43, minLng: 124, maxLng: 131 },
+      // Japan
+      { minLat: 30, maxLat: 46, minLng: 129, maxLng: 146 },
+      // Indonesia / Philippines
+      { minLat: -8, maxLat: 6, minLng: 95, maxLng: 141 },
+      { minLat: 5, maxLat: 20, minLng: 117, maxLng: 127 },
+      // Australia
+      { minLat: -44, maxLat: -10, minLng: 112, maxLng: 154 },
+      // New Zealand
+      { minLat: -47, maxLat: -34, minLng: 166, maxLng: 179 },
+    ];
+
+    function isLand(lat, lng) {
+      return LAND_REGIONS.some(r =>
+        lat >= r.minLat && lat <= r.maxLat &&
+        lng >= r.minLng && lng <= r.maxLng
+      );
+    }
+
     // ─── State ───────────────────────────────────────────────────────
     let homeCoords = null;
     let homeMarker = null;
-    let personData = null;       // { address, lat, lng, distance }
+    let personData = null;
     let personMarker = null;
     let distanceLine = null;
-    let selectedResult = null;   // from autocomplete
+    let selectedResult = null;
     let debounceTimer = null;
+
+    // Journey state
+    let journey = {
+      segments: [],
+      allPoints: [],
+      polylines: [],
+      portMarkers: [],
+      vehicleMarker: null,
+      currentPointIndex: 0,
+      isAnimating: false,
+      animationTimer: null,
+      roadDistance: 0,
+      shipDistance: 0,
+      isComplete: false
+    };
 
     // ─── Map Init ────────────────────────────────────────────────────
     const map = L.map('map', {
@@ -496,6 +845,117 @@
       return R * c;
     }
 
+    // ─── Great Circle Interpolation ──────────────────────────────────
+    function generateGreatCirclePoints(start, end, numPoints) {
+      const points = [];
+      const lat1 = start.lat * Math.PI / 180;
+      const lng1 = start.lng * Math.PI / 180;
+      const lat2 = end.lat * Math.PI / 180;
+      const lng2 = end.lng * Math.PI / 180;
+
+      const d = 2 * Math.asin(Math.sqrt(
+        Math.sin((lat1 - lat2) / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin((lng1 - lng2) / 2) ** 2
+      ));
+
+      // Very short distance: use linear interpolation
+      if (d < 0.0001) {
+        for (let i = 0; i <= numPoints; i++) {
+          const f = i / numPoints;
+          points.push({
+            lat: start.lat + f * (end.lat - start.lat),
+            lng: start.lng + f * (end.lng - start.lng)
+          });
+        }
+        return points;
+      }
+
+      for (let i = 0; i <= numPoints; i++) {
+        const f = i / numPoints;
+        const A = Math.sin((1 - f) * d) / Math.sin(d);
+        const B = Math.sin(f * d) / Math.sin(d);
+
+        const x = A * Math.cos(lat1) * Math.cos(lng1) + B * Math.cos(lat2) * Math.cos(lng2);
+        const y = A * Math.cos(lat1) * Math.sin(lng1) + B * Math.cos(lat2) * Math.sin(lng2);
+        const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+
+        const lat = Math.atan2(z, Math.sqrt(x * x + y * y)) * 180 / Math.PI;
+        const lng = Math.atan2(y, x) * 180 / Math.PI;
+
+        points.push({ lat, lng });
+      }
+
+      return points;
+    }
+
+    // ─── Route Classification ────────────────────────────────────────
+    function classifyRoute(points) {
+      if (points.length === 0) return [];
+
+      const segments = [];
+      let currentType = isLand(points[0].lat, points[0].lng) ? 'road' : 'ship';
+      let currentPoints = [points[0]];
+
+      for (let i = 1; i < points.length; i++) {
+        const type = isLand(points[i].lat, points[i].lng) ? 'road' : 'ship';
+        if (type === currentType) {
+          currentPoints.push(points[i]);
+        } else {
+          segments.push({ type: currentType, points: [...currentPoints] });
+          currentType = type;
+          currentPoints = [points[i]];
+        }
+      }
+
+      if (currentPoints.length > 0) {
+        segments.push({ type: currentType, points: currentPoints });
+      }
+
+      // Smooth out very short segments (noise from rough bounding boxes)
+      return smoothSegments(segments);
+    }
+
+    function smoothSegments(segments) {
+      if (segments.length <= 1) return segments;
+
+      const MIN_POINTS = 5;
+      const smoothed = [];
+
+      for (let i = 0; i < segments.length; i++) {
+        if (segments[i].points.length < MIN_POINTS && smoothed.length > 0) {
+          // Merge with previous segment
+          smoothed[smoothed.length - 1].points.push(...segments[i].points);
+        } else if (segments[i].points.length < MIN_POINTS && smoothed.length === 0 && i + 1 < segments.length) {
+          // Merge with next segment
+          segments[i + 1].points.unshift(...segments[i].points);
+        } else {
+          smoothed.push({ type: segments[i].type, points: [...segments[i].points] });
+        }
+      }
+
+      return smoothed;
+    }
+
+    // ─── Calculate Segment Distances ─────────────────────────────────
+    function calculateSegmentDistances(segments) {
+      let roadDist = 0;
+      let shipDist = 0;
+
+      segments.forEach(seg => {
+        let dist = 0;
+        for (let i = 1; i < seg.points.length; i++) {
+          dist += haversineDistance(
+            seg.points[i - 1].lat, seg.points[i - 1].lng,
+            seg.points[i].lat, seg.points[i].lng
+          );
+        }
+        if (seg.type === 'road') roadDist += dist;
+        else shipDist += dist;
+      });
+
+      return { roadDist, shipDist, totalDist: roadDist + shipDist };
+    }
+
     // ─── Geocode via Nominatim ───────────────────────────────────────
     async function geocode(address) {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
@@ -535,7 +995,6 @@
         statusText.textContent = 'Home located';
         dot.classList.add('active');
 
-        // Recalculate distance if person exists
         if (personData) {
           updateDistance();
         }
@@ -599,7 +1058,6 @@
       }, 300);
     });
 
-    // Close autocomplete on outside click
     document.addEventListener('click', function (e) {
       if (!document.getElementById('addressInputGroup').contains(e.target)) {
         autocompleteList.style.display = 'none';
@@ -617,22 +1075,18 @@
         distance: null
       };
 
-      // Clear input
       personInput.value = '';
       selectedResult = null;
       addBtn.disabled = true;
 
-      // Place marker
       if (personMarker) map.removeLayer(personMarker);
       personMarker = L.marker([personData.lat, personData.lng], {
         icon: createSVGIcon('YOU', false)
       }).addTo(map);
 
-      // Calculate distance
       updateDistance();
-
-      // Render card
       renderPersonCard();
+      showJourneySection();
     }
 
     // ─── Update Distance ─────────────────────────────────────────────
@@ -642,7 +1096,6 @@
       const dist = haversineDistance(homeCoords.lat, homeCoords.lng, personData.lat, personData.lng);
       personData.distance = dist;
 
-      // Update marker popup
       if (personMarker) {
         personMarker.bindPopup(`
           <div class="popup-title">You</div>
@@ -651,19 +1104,316 @@
         `);
       }
 
-      // Draw dashed line
+      // Draw simple dashed line (will be replaced by journey animation)
       if (distanceLine) map.removeLayer(distanceLine);
       distanceLine = L.polyline(
         [[homeCoords.lat, homeCoords.lng], [personData.lat, personData.lng]],
-        { color: '#fff', weight: 1.5, dashArray: '8, 6', opacity: 0.7 }
+        { color: '#fff', weight: 1, dashArray: '4, 8', opacity: 0.3 }
       ).addTo(map);
 
-      // Fit map to show both markers
       const group = L.featureGroup([homeMarker, personMarker]);
       map.fitBounds(group.getBounds().pad(0.3));
 
-      // Re-render card
       renderPersonCard();
+    }
+
+    // ─── Show Journey Section ────────────────────────────────────────
+    function showJourneySection() {
+      if (!homeCoords || !personData) return;
+
+      const journeySection = document.getElementById('journeySection');
+      journeySection.style.display = 'block';
+
+      // Pre-calculate route to show stats
+      const numWaypoints = 300;
+      const points = generateGreatCirclePoints(homeCoords, personData, numWaypoints);
+      const segments = classifyRoute(points);
+      const { roadDist, shipDist, totalDist } = calculateSegmentDistances(segments);
+
+      journey.roadDistance = roadDist;
+      journey.shipDistance = shipDist;
+
+      const statsHtml = `
+        <div class="journey-stat-row">
+          <span class="stat-label"><span class="stat-dot road"></span> By Road</span>
+          <span class="stat-value">${roadDist.toFixed(1)} km</span>
+        </div>
+        <div class="journey-stat-row">
+          <span class="stat-label"><span class="stat-dot ship"></span> By Ship</span>
+          <span class="stat-value">${shipDist.toFixed(1)} km</span>
+        </div>
+        <div class="journey-stat-row" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 4px;">
+          <span class="stat-label"><span class="stat-dot total"></span> Total</span>
+          <span class="stat-value">${totalDist.toFixed(1)} km</span>
+        </div>
+      `;
+
+      document.getElementById('journeyStats').innerHTML = statsHtml;
+
+      // Reset button states
+      document.getElementById('startJourneyBtn').style.display = 'block';
+      document.getElementById('startJourneyBtn').disabled = false;
+      document.getElementById('startJourneyBtn').textContent = 'Start Journey';
+      document.getElementById('resetJourneyBtn').style.display = 'none';
+      document.getElementById('journeyProgress').style.display = 'none';
+      document.getElementById('journeyCompleteMsg').style.display = 'none';
+    }
+
+    // ─── Start Journey Animation ─────────────────────────────────────
+    function startJourney() {
+      if (!homeCoords || !personData) return;
+      if (journey.isAnimating) return;
+
+      // Clear previous journey visuals
+      clearJourneyVisuals();
+
+      // Hide the simple distance line
+      if (distanceLine) {
+        map.removeLayer(distanceLine);
+        distanceLine = null;
+      }
+
+      // Generate route
+      const numWaypoints = 300;
+      const points = generateGreatCirclePoints(homeCoords, personData, numWaypoints);
+      const segments = classifyRoute(points);
+
+      journey.segments = segments;
+      journey.allPoints = points;
+      journey.currentPointIndex = 0;
+      journey.isAnimating = true;
+      journey.isComplete = false;
+
+      // Create polylines for each segment (initially empty)
+      let globalIndex = 0;
+      segments.forEach(seg => {
+        const color = seg.type === 'road' ? '#D4A843' : '#64B5F6';
+        const dashArray = seg.type === 'road' ? null : '8, 6';
+        const weight = seg.type === 'road' ? 3 : 3;
+
+        // Shadow line for glow effect
+        const shadowLine = L.polyline([], {
+          color: color,
+          weight: 8,
+          opacity: 0.15
+        }).addTo(map);
+
+        const polyline = L.polyline([], {
+          color: color,
+          weight: weight,
+          opacity: 0.9,
+          dashArray: dashArray,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }).addTo(map);
+
+        seg.startIndex = globalIndex;
+        globalIndex += seg.points.length;
+
+        journey.polylines.push({ main: polyline, shadow: shadowLine, type: seg.type });
+      });
+
+      // Create vehicle marker
+      const startType = segments.length > 0 ? segments[0].type : 'road';
+      journey.vehicleMarker = L.marker([points[0].lat, points[0].lng], {
+        icon: createVehicleIcon(startType),
+        zIndexOffset: 1000
+      }).addTo(map);
+
+      // Show legend and progress
+      document.getElementById('mapLegend').style.display = 'block';
+      document.getElementById('journeyProgress').style.display = 'block';
+      document.getElementById('startJourneyBtn').disabled = true;
+      document.getElementById('startJourneyBtn').textContent = 'Animating...';
+
+      // Fit map to show entire route
+      const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
+      map.fitBounds(bounds.pad(0.15));
+
+      // Start animation loop
+      animateStep();
+    }
+
+    function createVehicleIcon(type) {
+      return L.divIcon({
+        html: `<div class="vehicle-dot ${type}"></div>`,
+        className: '',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+    }
+
+    function createPortIcon() {
+      return L.divIcon({
+        html: `<div class="port-dot"></div>`,
+        className: '',
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+      });
+    }
+
+    function animateStep() {
+      if (!journey.isAnimating) return;
+      if (journey.currentPointIndex >= journey.allPoints.length) {
+        completeJourney();
+        return;
+      }
+
+      const point = journey.allPoints[journey.currentPointIndex];
+
+      // Find which segment this point belongs to
+      let cumulative = 0;
+      for (let i = 0; i < journey.segments.length; i++) {
+        const seg = journey.segments[i];
+        const segEnd = cumulative + seg.points.length;
+
+        if (journey.currentPointIndex < segEnd) {
+          const localIndex = journey.currentPointIndex - cumulative;
+
+          // Add point to polyline
+          journey.polylines[i].main.addLatLng([point.lat, point.lng]);
+          journey.polylines[i].shadow.addLatLng([point.lat, point.lng]);
+
+          // Update vehicle icon if segment type changed
+          if (localIndex === 0 && i > 0) {
+            journey.vehicleMarker.setIcon(createVehicleIcon(seg.type));
+
+            // Add port marker at transition point
+            const portMarker = L.marker([point.lat, point.lng], {
+              icon: createPortIcon(),
+              zIndexOffset: 500
+            }).addTo(map);
+            portMarker.bindPopup(`
+              <div class="popup-title">Port</div>
+              <div class="popup-address">Transition: ${journey.segments[i - 1].type} to ${seg.type}</div>
+            `);
+            journey.portMarkers.push(portMarker);
+          }
+
+          // Update segment indicator
+          const indicator = document.getElementById('segmentIndicator');
+          indicator.textContent = seg.type === 'road' ? 'Travelling by road...' : 'Sailing by ship...';
+          indicator.className = `segment-indicator ${seg.type}`;
+
+          break;
+        }
+        cumulative = segEnd;
+      }
+
+      // Move vehicle
+      journey.vehicleMarker.setLatLng([point.lat, point.lng]);
+
+      // Update progress bar
+      const progress = (journey.currentPointIndex / journey.allPoints.length) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+
+      journey.currentPointIndex++;
+
+      // Animation speed: faster for longer routes, minimum 15ms per frame
+      const baseDelay = Math.max(15, Math.min(50, 12000 / journey.allPoints.length));
+      journey.animationTimer = setTimeout(() => requestAnimationFrame(animateStep), baseDelay);
+    }
+
+    function completeJourney() {
+      journey.isAnimating = false;
+      journey.isComplete = true;
+
+      // Update UI
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('segmentIndicator').textContent = 'Journey complete';
+      document.getElementById('segmentIndicator').className = 'segment-indicator';
+      document.getElementById('segmentIndicator').style.color = '#D4A843';
+
+      document.getElementById('startJourneyBtn').style.display = 'none';
+
+      const completeMsg = document.getElementById('journeyCompleteMsg');
+      completeMsg.innerHTML = `<div class="journey-complete-msg">Arrived at destination</div>`;
+      completeMsg.style.display = 'block';
+
+      document.getElementById('resetJourneyBtn').style.display = 'block';
+
+      // Remove vehicle marker and add arrival effect
+      if (journey.vehicleMarker) {
+        map.removeLayer(journey.vehicleMarker);
+        journey.vehicleMarker = null;
+      }
+
+      // Add arrival pulse at destination
+      if (personData) {
+        const arrivalIcon = L.divIcon({
+          html: `<div style="position:relative; width:40px; height:40px;">
+                   <div class="arrival-ring"></div>
+                   <div class="arrival-ring" style="animation-delay: 0.5s;"></div>
+                 </div>`,
+          className: '',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+
+        const arrivalMarker = L.marker([personData.lat, personData.lng], {
+          icon: arrivalIcon,
+          zIndexOffset: 800
+        }).addTo(map);
+
+        journey.portMarkers.push(arrivalMarker);
+
+        // Zoom to destination
+        setTimeout(() => {
+          map.flyTo([personData.lat, personData.lng], 10, { duration: 2 });
+        }, 500);
+      }
+    }
+
+    // ─── Reset Journey ───────────────────────────────────────────────
+    function resetJourney() {
+      if (journey.animationTimer) {
+        clearTimeout(journey.animationTimer);
+      }
+      journey.isAnimating = false;
+
+      clearJourneyVisuals();
+
+      // Re-draw simple distance line
+      if (homeCoords && personData) {
+        distanceLine = L.polyline(
+          [[homeCoords.lat, homeCoords.lng], [personData.lat, personData.lng]],
+          { color: '#fff', weight: 1, dashArray: '4, 8', opacity: 0.3 }
+        ).addTo(map);
+
+        const group = L.featureGroup([homeMarker, personMarker]);
+        map.fitBounds(group.getBounds().pad(0.3));
+      }
+
+      document.getElementById('mapLegend').style.display = 'none';
+
+      // Reset journey section UI
+      showJourneySection();
+    }
+
+    function clearJourneyVisuals() {
+      journey.polylines.forEach(p => {
+        map.removeLayer(p.main);
+        map.removeLayer(p.shadow);
+      });
+      journey.polylines = [];
+
+      journey.portMarkers.forEach(m => map.removeLayer(m));
+      journey.portMarkers = [];
+
+      if (journey.vehicleMarker) {
+        map.removeLayer(journey.vehicleMarker);
+        journey.vehicleMarker = null;
+      }
+
+      if (journey.animationTimer) {
+        clearTimeout(journey.animationTimer);
+        journey.animationTimer = null;
+      }
+
+      journey.segments = [];
+      journey.allPoints = [];
+      journey.currentPointIndex = 0;
+      journey.isComplete = false;
     }
 
     // ─── Render Person Card ──────────────────────────────────────────
@@ -671,7 +1421,7 @@
       const container = document.getElementById('personCardContainer');
 
       if (!personData) {
-        container.innerHTML = '<div class="empty-state" id="emptyState">Enter an address above to see the distance.</div>';
+        container.innerHTML = '<div class="empty-state" id="emptyState">Enter an address above to see the distance and travel route.</div>';
         return;
       }
 
@@ -698,12 +1448,21 @@
 
     // ─── Remove Person ───────────────────────────────────────────────
     function removePerson() {
+      // Stop any running animation
+      if (journey.animationTimer) clearTimeout(journey.animationTimer);
+      journey.isAnimating = false;
+      clearJourneyVisuals();
+
       if (personMarker) map.removeLayer(personMarker);
       if (distanceLine) map.removeLayer(distanceLine);
       personMarker = null;
       distanceLine = null;
       personData = null;
       renderPersonCard();
+
+      // Hide journey section and legend
+      document.getElementById('journeySection').style.display = 'none';
+      document.getElementById('mapLegend').style.display = 'none';
 
       if (homeCoords) {
         map.setView([homeCoords.lat, homeCoords.lng], 14);
