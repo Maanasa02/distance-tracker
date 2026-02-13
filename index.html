@@ -1226,12 +1226,28 @@
       }));
     }
 
+    // ─── Detect Ocean Crossing ─────────────────────────────────────
+    function needsOceanCrossing(start, end) {
+      const testPoints = generateGreatCirclePoints(start, end, 60);
+      let waterCount = 0;
+      for (const p of testPoints) {
+        if (!isLand(p.lat, p.lng)) waterCount++;
+      }
+      // If more than 20% of the great-circle path is over water, ship is needed
+      return waterCount > 12;
+    }
+
     // ─── Full Route Generation (OSRM + Shipping) ─────────────────────
     async function generateFullRoute(start, end) {
-      // 1. Try direct OSRM road route
-      const directRoad = await getOSRMRoute(start, end);
-      if (directRoad && directRoad.length > 0) {
-        return normalizeSegments([{ type: 'road', points: directRoad }], 400);
+      // 1. Check if great-circle crosses significant water
+      const oceanNeeded = needsOceanCrossing(start, end);
+
+      if (!oceanNeeded) {
+        // Same landmass — try direct OSRM road route
+        const directRoad = await getOSRMRoute(start, end);
+        if (directRoad && directRoad.length > 0) {
+          return normalizeSegments([{ type: 'road', points: directRoad }], 400);
+        }
       }
 
       // 2. Need ocean crossing — find nearest ports
