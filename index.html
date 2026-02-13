@@ -799,7 +799,10 @@
       animationTimer: null,
       roadDistance: 0,
       shipDistance: 0,
-      isComplete: false
+      isComplete: false,
+      precomputedRoute: null,
+      totalDist: 0,
+      currentSegmentType: 'road'
     };
 
     // ─── Map Init ────────────────────────────────────────────────────
@@ -889,52 +892,388 @@
       return points;
     }
 
-    // ─── Route Classification ────────────────────────────────────────
-    function classifyRoute(points) {
-      if (points.length === 0) return [];
+    // ─── Shipping Port Network ──────────────────────────────────────
+    const PORTS = {
+      // Asia
+      tokyo:        { name: 'Tokyo',         lat: 35.44,  lng: 139.64 },
+      shanghai:     { name: 'Shanghai',      lat: 31.23,  lng: 121.47 },
+      hongkong:     { name: 'Hong Kong',     lat: 22.29,  lng: 114.17 },
+      singapore:    { name: 'Singapore',     lat:  1.26,  lng: 103.84 },
+      chennai:      { name: 'Chennai',       lat: 13.08,  lng:  80.27 },
+      mumbai:       { name: 'Mumbai',        lat: 18.94,  lng:  72.84 },
+      colombo:      { name: 'Colombo',       lat:  6.93,  lng:  79.84 },
+      karachi:      { name: 'Karachi',       lat: 24.85,  lng:  67.00 },
+      // Middle East
+      dubai:        { name: 'Dubai',         lat: 25.27,  lng:  55.29 },
+      aden:         { name: 'Aden',          lat: 12.79,  lng:  45.01 },
+      // Red Sea / Suez
+      suez:         { name: 'Suez',          lat: 29.97,  lng:  32.55 },
+      portsaid:     { name: 'Port Said',     lat: 31.26,  lng:  32.30 },
+      // Mediterranean
+      piraeus:      { name: 'Piraeus',       lat: 37.94,  lng:  23.63 },
+      genoa:        { name: 'Genoa',         lat: 44.41,  lng:   8.93 },
+      barcelona:    { name: 'Barcelona',     lat: 41.35,  lng:   2.17 },
+      marseille:    { name: 'Marseille',     lat: 43.30,  lng:   5.37 },
+      // Atlantic Europe
+      gibraltar:    { name: 'Gibraltar',     lat: 36.14,  lng:  -5.35 },
+      lisbon:       { name: 'Lisbon',        lat: 38.71,  lng:  -9.14 },
+      southampton:  { name: 'Southampton',   lat: 50.89,  lng:  -1.40 },
+      rotterdam:    { name: 'Rotterdam',     lat: 51.95,  lng:   4.48 },
+      hamburg:      { name: 'Hamburg',       lat: 53.55,  lng:   9.99 },
+      // Africa
+      mombasa:      { name: 'Mombasa',       lat: -4.04,  lng:  39.67 },
+      durban:       { name: 'Durban',        lat:-29.87,  lng:  31.05 },
+      capetown:     { name: 'Cape Town',     lat:-33.92,  lng:  18.42 },
+      lagos:        { name: 'Lagos',         lat:  6.45,  lng:   3.39 },
+      dakar:        { name: 'Dakar',         lat: 14.69,  lng: -17.44 },
+      // Americas
+      newyork:      { name: 'New York',      lat: 40.68,  lng: -74.05 },
+      miami:        { name: 'Miami',         lat: 25.77,  lng: -80.19 },
+      panama:       { name: 'Panama',        lat:  9.08,  lng: -79.68 },
+      losangeles:   { name: 'Los Angeles',   lat: 33.73,  lng:-118.26 },
+      sanfrancisco: { name: 'San Francisco', lat: 37.81,  lng:-122.47 },
+      santos:       { name: 'Santos',        lat:-23.95,  lng: -46.30 },
+      buenosaires:  { name: 'Buenos Aires',  lat:-34.61,  lng: -58.38 },
+      // Oceania
+      sydney:       { name: 'Sydney',        lat:-33.86,  lng: 151.21 },
+      melbourne:    { name: 'Melbourne',     lat:-37.84,  lng: 144.95 },
+    };
 
-      const segments = [];
-      let currentType = isLand(points[0].lat, points[0].lng) ? 'road' : 'ship';
-      let currentPoints = [points[0]];
+    // Shipping lanes with intermediate waypoints for realistic ocean paths
+    const SHIPPING_EDGES = [
+      // East Asia
+      { from: 'tokyo', to: 'shanghai' },
+      { from: 'shanghai', to: 'hongkong' },
+      { from: 'hongkong', to: 'singapore' },
+      { from: 'hongkong', to: 'tokyo', waypoints: [
+        { lat: 25.0, lng: 122.0 }, { lat: 30.0, lng: 128.0 }, { lat: 33.0, lng: 133.0 }
+      ]},
+      // SE Asia → Indian Ocean
+      { from: 'singapore', to: 'colombo', waypoints: [
+        { lat: 2.5, lng: 100.0 }, { lat: 5.0, lng: 95.0 }, { lat: 5.0, lng: 85.0 }
+      ]},
+      { from: 'singapore', to: 'chennai', waypoints: [
+        { lat: 3.0, lng: 100.0 }, { lat: 5.0, lng: 95.0 }, { lat: 7.0, lng: 85.0 }, { lat: 10.0, lng: 80.5 }
+      ]},
+      // Indian subcontinent
+      { from: 'chennai', to: 'colombo' },
+      { from: 'colombo', to: 'mumbai', waypoints: [
+        { lat: 7.0, lng: 77.0 }, { lat: 10.0, lng: 74.0 }, { lat: 15.0, lng: 72.5 }
+      ]},
+      { from: 'chennai', to: 'mumbai', waypoints: [
+        { lat: 10.0, lng: 79.5 }, { lat: 7.5, lng: 77.0 }, { lat: 10.0, lng: 74.0 }, { lat: 15.0, lng: 72.5 }
+      ]},
+      { from: 'mumbai', to: 'karachi' },
+      // Middle East
+      { from: 'mumbai', to: 'dubai', waypoints: [
+        { lat: 20.0, lng: 66.0 }, { lat: 23.0, lng: 60.0 }
+      ]},
+      { from: 'karachi', to: 'dubai', waypoints: [{ lat: 24.0, lng: 62.0 }] },
+      { from: 'dubai', to: 'aden', waypoints: [
+        { lat: 23.0, lng: 58.0 }, { lat: 15.0, lng: 52.0 }
+      ]},
+      { from: 'colombo', to: 'aden', waypoints: [
+        { lat: 5.0, lng: 72.0 }, { lat: 5.0, lng: 55.0 }, { lat: 10.0, lng: 48.0 }
+      ]},
+      // Red Sea / Suez
+      { from: 'aden', to: 'suez', waypoints: [
+        { lat: 14.0, lng: 43.0 }, { lat: 20.0, lng: 38.0 }, { lat: 25.0, lng: 35.0 }
+      ]},
+      { from: 'suez', to: 'portsaid' },
+      // Mediterranean
+      { from: 'portsaid', to: 'piraeus', waypoints: [
+        { lat: 33.0, lng: 30.0 }, { lat: 35.0, lng: 26.0 }
+      ]},
+      { from: 'piraeus', to: 'genoa', waypoints: [
+        { lat: 38.0, lng: 18.0 }, { lat: 40.0, lng: 13.0 }
+      ]},
+      { from: 'piraeus', to: 'barcelona', waypoints: [
+        { lat: 38.0, lng: 18.0 }, { lat: 38.0, lng: 10.0 }, { lat: 39.0, lng: 5.0 }
+      ]},
+      { from: 'genoa', to: 'marseille' },
+      { from: 'genoa', to: 'barcelona', waypoints: [
+        { lat: 43.0, lng: 6.0 }, { lat: 42.0, lng: 4.0 }
+      ]},
+      { from: 'barcelona', to: 'gibraltar', waypoints: [
+        { lat: 38.0, lng: 0.0 }, { lat: 36.5, lng: -3.0 }
+      ]},
+      { from: 'marseille', to: 'barcelona' },
+      // Atlantic Europe
+      { from: 'gibraltar', to: 'lisbon', waypoints: [{ lat: 36.5, lng: -7.0 }] },
+      { from: 'lisbon', to: 'southampton', waypoints: [
+        { lat: 43.0, lng: -9.5 }, { lat: 47.0, lng: -6.0 }, { lat: 49.0, lng: -3.0 }
+      ]},
+      { from: 'southampton', to: 'rotterdam', waypoints: [
+        { lat: 51.0, lng: 1.0 }, { lat: 51.5, lng: 3.0 }
+      ]},
+      { from: 'rotterdam', to: 'hamburg' },
+      // Africa East Coast
+      { from: 'aden', to: 'mombasa', waypoints: [
+        { lat: 8.0, lng: 46.0 }, { lat: 2.0, lng: 42.0 }
+      ]},
+      { from: 'mombasa', to: 'durban', waypoints: [
+        { lat: -8.0, lng: 40.0 }, { lat: -15.0, lng: 38.0 }, { lat: -25.0, lng: 35.0 }
+      ]},
+      { from: 'durban', to: 'capetown', waypoints: [
+        { lat: -32.0, lng: 28.0 }, { lat: -34.5, lng: 22.0 }
+      ]},
+      { from: 'colombo', to: 'mombasa', waypoints: [
+        { lat: 3.0, lng: 70.0 }, { lat: 0.0, lng: 55.0 }, { lat: -2.0, lng: 45.0 }
+      ]},
+      // Africa West Coast
+      { from: 'capetown', to: 'lagos', waypoints: [
+        { lat: -30.0, lng: 14.0 }, { lat: -15.0, lng: 8.0 }, { lat: -5.0, lng: 5.0 }, { lat: 3.0, lng: 3.0 }
+      ]},
+      { from: 'lagos', to: 'dakar', waypoints: [
+        { lat: 5.0, lng: -2.0 }, { lat: 7.0, lng: -10.0 }, { lat: 12.0, lng: -15.0 }
+      ]},
+      // Transatlantic
+      { from: 'dakar', to: 'miami', waypoints: [
+        { lat: 15.0, lng: -25.0 }, { lat: 18.0, lng: -40.0 }, { lat: 20.0, lng: -55.0 }, { lat: 22.0, lng: -70.0 }
+      ]},
+      { from: 'dakar', to: 'santos', waypoints: [
+        { lat: 5.0, lng: -20.0 }, { lat: -5.0, lng: -25.0 }, { lat: -15.0, lng: -30.0 }, { lat: -22.0, lng: -38.0 }
+      ]},
+      { from: 'lisbon', to: 'newyork', waypoints: [
+        { lat: 40.0, lng: -20.0 }, { lat: 41.0, lng: -40.0 }, { lat: 41.0, lng: -60.0 }
+      ]},
+      { from: 'southampton', to: 'newyork', waypoints: [
+        { lat: 50.0, lng: -10.0 }, { lat: 48.0, lng: -25.0 }, { lat: 44.0, lng: -45.0 }, { lat: 42.0, lng: -60.0 }
+      ]},
+      // Americas
+      { from: 'newyork', to: 'miami' },
+      { from: 'miami', to: 'panama', waypoints: [
+        { lat: 22.0, lng: -80.0 }, { lat: 15.0, lng: -80.0 }
+      ]},
+      { from: 'santos', to: 'buenosaires' },
+      // Pacific
+      { from: 'panama', to: 'losangeles', waypoints: [
+        { lat: 12.0, lng: -85.0 }, { lat: 18.0, lng: -100.0 }, { lat: 25.0, lng: -110.0 }
+      ]},
+      { from: 'losangeles', to: 'sanfrancisco' },
+      { from: 'losangeles', to: 'tokyo', waypoints: [
+        { lat: 30.0, lng: -130.0 }, { lat: 32.0, lng: -150.0 }, { lat: 33.0, lng: -170.0 },
+        { lat: 34.0, lng: 170.0 }, { lat: 34.0, lng: 155.0 }
+      ]},
+      { from: 'sanfrancisco', to: 'tokyo', waypoints: [
+        { lat: 38.0, lng: -135.0 }, { lat: 38.0, lng: -155.0 }, { lat: 37.0, lng: -175.0 },
+        { lat: 36.0, lng: 165.0 }, { lat: 35.5, lng: 150.0 }
+      ]},
+      // Australia
+      { from: 'singapore', to: 'sydney', waypoints: [
+        { lat: -5.0, lng: 110.0 }, { lat: -10.0, lng: 120.0 }, { lat: -15.0, lng: 130.0 },
+        { lat: -25.0, lng: 145.0 }, { lat: -30.0, lng: 150.0 }
+      ]},
+      { from: 'sydney', to: 'melbourne' },
+      // Additional cross-links
+      { from: 'capetown', to: 'buenosaires', waypoints: [
+        { lat: -35.0, lng: 10.0 }, { lat: -35.0, lng: -10.0 }, { lat: -35.0, lng: -30.0 }, { lat: -35.0, lng: -45.0 }
+      ]},
+    ];
 
-      for (let i = 1; i < points.length; i++) {
-        const type = isLand(points[i].lat, points[i].lng) ? 'road' : 'ship';
-        if (type === currentType) {
-          currentPoints.push(points[i]);
-        } else {
-          segments.push({ type: currentType, points: [...currentPoints] });
-          currentType = type;
-          currentPoints = [points[i]];
+    // ─── Find Nearest Port ───────────────────────────────────────────
+    function findNearestPort(coords) {
+      let best = null;
+      let bestDist = Infinity;
+      for (const [id, port] of Object.entries(PORTS)) {
+        const d = haversineDistance(coords.lat, coords.lng, port.lat, port.lng);
+        if (d < bestDist) {
+          bestDist = d;
+          best = { id, ...port, dist: d };
         }
       }
-
-      if (currentPoints.length > 0) {
-        segments.push({ type: currentType, points: currentPoints });
-      }
-
-      // Smooth out very short segments (noise from rough bounding boxes)
-      return smoothSegments(segments);
+      return best;
     }
 
-    function smoothSegments(segments) {
-      if (segments.length <= 1) return segments;
+    // ─── Dijkstra Sea Route ──────────────────────────────────────────
+    function dijkstraSeaRoute(fromId, toId) {
+      if (fromId === toId) return [fromId];
 
-      const MIN_POINTS = 5;
-      const smoothed = [];
+      // Build adjacency list
+      const adj = {};
+      Object.keys(PORTS).forEach(id => { adj[id] = []; });
 
-      for (let i = 0; i < segments.length; i++) {
-        if (segments[i].points.length < MIN_POINTS && smoothed.length > 0) {
-          // Merge with previous segment
-          smoothed[smoothed.length - 1].points.push(...segments[i].points);
-        } else if (segments[i].points.length < MIN_POINTS && smoothed.length === 0 && i + 1 < segments.length) {
-          // Merge with next segment
-          segments[i + 1].points.unshift(...segments[i].points);
-        } else {
-          smoothed.push({ type: segments[i].type, points: [...segments[i].points] });
+      SHIPPING_EDGES.forEach(edge => {
+        const d = haversineDistance(PORTS[edge.from].lat, PORTS[edge.from].lng, PORTS[edge.to].lat, PORTS[edge.to].lng);
+        adj[edge.from].push({ to: edge.to, dist: d });
+        adj[edge.to].push({ to: edge.from, dist: d });
+      });
+
+      const distances = {};
+      const prev = {};
+      const visited = new Set();
+      Object.keys(PORTS).forEach(id => { distances[id] = Infinity; });
+      distances[fromId] = 0;
+
+      while (true) {
+        let minDist = Infinity;
+        let current = null;
+        for (const id of Object.keys(PORTS)) {
+          if (!visited.has(id) && distances[id] < minDist) {
+            minDist = distances[id];
+            current = id;
+          }
+        }
+        if (current === null || current === toId) break;
+        visited.add(current);
+
+        for (const { to, dist } of adj[current]) {
+          const newDist = distances[current] + dist;
+          if (newDist < distances[to]) {
+            distances[to] = newDist;
+            prev[to] = current;
+          }
         }
       }
 
-      return smoothed;
+      if (distances[toId] === Infinity) return [fromId, toId];
+
+      const path = [];
+      let node = toId;
+      while (node) { path.unshift(node); node = prev[node]; }
+      return path;
+    }
+
+    // ─── Build Shipping Waypoints from Port Path ─────────────────────
+    function findShippingEdge(fromId, toId) {
+      return SHIPPING_EDGES.find(e =>
+        (e.from === fromId && e.to === toId) || (e.from === toId && e.to === fromId)
+      );
+    }
+
+    function getShippingWaypoints(portPath) {
+      if (portPath.length < 2) return [];
+      const points = [];
+
+      for (let i = 0; i < portPath.length - 1; i++) {
+        const fromPort = PORTS[portPath[i]];
+        const toPort = PORTS[portPath[i + 1]];
+        const edge = findShippingEdge(portPath[i], portPath[i + 1]);
+
+        let waypoints;
+        if (edge && edge.waypoints) {
+          // Determine direction: if edge.from matches our from, use waypoints as-is; otherwise reverse
+          const reversed = edge.from !== portPath[i];
+          const edgeWps = reversed ? [...edge.waypoints].reverse() : edge.waypoints;
+          waypoints = [
+            { lat: fromPort.lat, lng: fromPort.lng },
+            ...edgeWps,
+            { lat: toPort.lat, lng: toPort.lng }
+          ];
+        } else {
+          waypoints = [
+            { lat: fromPort.lat, lng: fromPort.lng },
+            { lat: toPort.lat, lng: toPort.lng }
+          ];
+        }
+
+        // Generate smooth intermediate points between each waypoint pair
+        for (let j = 0; j < waypoints.length - 1; j++) {
+          const segPts = generateGreatCirclePoints(waypoints[j], waypoints[j + 1], 20);
+          if (points.length > 0) segPts.shift(); // avoid duplicate at junction
+          points.push(...segPts);
+        }
+      }
+      return points;
+    }
+
+    // ─── OSRM Road Routing ───────────────────────────────────────────
+    async function getOSRMRoute(start, end) {
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        const data = await res.json();
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          return data.routes[0].geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ─── Subsample Points ────────────────────────────────────────────
+    function subsamplePoints(points, targetCount) {
+      if (!points || points.length <= targetCount) return points || [];
+      const result = [points[0]];
+      const step = (points.length - 1) / (targetCount - 1);
+      for (let i = 1; i < targetCount - 1; i++) {
+        result.push(points[Math.round(i * step)]);
+      }
+      result.push(points[points.length - 1]);
+      return result;
+    }
+
+    // ─── Normalize Segment Point Density ─────────────────────────────
+    function normalizeSegments(segments, targetTotal) {
+      let totalDist = 0;
+      segments.forEach(seg => {
+        let d = 0;
+        for (let i = 1; i < seg.points.length; i++) {
+          d += haversineDistance(seg.points[i-1].lat, seg.points[i-1].lng, seg.points[i].lat, seg.points[i].lng);
+        }
+        seg._dist = d;
+        totalDist += d;
+      });
+      if (totalDist === 0) return segments;
+
+      return segments.map(seg => ({
+        type: seg.type,
+        points: subsamplePoints(seg.points, Math.max(10, Math.round(targetTotal * seg._dist / totalDist)))
+      }));
+    }
+
+    // ─── Full Route Generation (OSRM + Shipping) ─────────────────────
+    async function generateFullRoute(start, end) {
+      // 1. Try direct OSRM road route
+      const directRoad = await getOSRMRoute(start, end);
+      if (directRoad && directRoad.length > 0) {
+        return normalizeSegments([{ type: 'road', points: directRoad }], 400);
+      }
+
+      // 2. Need ocean crossing — find nearest ports
+      const startPort = findNearestPort(start);
+      const endPort = findNearestPort(end);
+
+      if (startPort.id === endPort.id) {
+        // Same port — fallback to great circle
+        const pts = generateGreatCirclePoints(start, end, 300);
+        return [{ type: 'road', points: pts }];
+      }
+
+      // 3. Road from start to departure port
+      const roadToPort = await getOSRMRoute(start, { lat: startPort.lat, lng: startPort.lng });
+
+      // 4. Sea route between ports (Dijkstra + shipping lanes)
+      const seaPath = dijkstraSeaRoute(startPort.id, endPort.id);
+      const seaPoints = getShippingWaypoints(seaPath);
+
+      // 5. Road from arrival port to destination
+      const roadFromPort = await getOSRMRoute({ lat: endPort.lat, lng: endPort.lng }, end);
+
+      // 6. Stitch segments
+      const segments = [];
+
+      if (roadToPort && roadToPort.length > 0) {
+        segments.push({ type: 'road', points: roadToPort });
+      } else {
+        segments.push({ type: 'road', points: generateGreatCirclePoints(start, { lat: startPort.lat, lng: startPort.lng }, 50) });
+      }
+
+      if (seaPoints.length > 0) {
+        segments.push({ type: 'ship', points: seaPoints });
+      }
+
+      if (roadFromPort && roadFromPort.length > 0) {
+        segments.push({ type: 'road', points: roadFromPort });
+      } else {
+        segments.push({ type: 'road', points: generateGreatCirclePoints({ lat: endPort.lat, lng: endPort.lng }, end, 50) });
+      }
+
+      return normalizeSegments(segments, 400);
     }
 
     // ─── Calculate Segment Distances ─────────────────────────────────
@@ -1087,7 +1426,6 @@
 
       updateDistance();
       renderPersonCard();
-      showJourneySection();
     }
 
     // ─── Update Distance ─────────────────────────────────────────────
@@ -1117,52 +1455,60 @@
 
       renderPersonCard();
 
-      // Auto-show journey section and start animation
-      showJourneySection();
-      if (!journey.isAnimating && !journey.isComplete) {
-        setTimeout(() => startJourney(), 800);
-      }
+      // Compute route then auto-start
+      computeAndShowJourney();
     }
 
-    // ─── Show Journey Section ────────────────────────────────────────
-    function showJourneySection() {
+    // ─── Compute Route & Show Journey Section ────────────────────────
+    async function computeAndShowJourney() {
       if (!homeCoords || !personData) return;
 
       document.getElementById('journeyWaiting').style.display = 'none';
-
-      // Pre-calculate route to show stats
-      const numWaypoints = 300;
-      const points = generateGreatCirclePoints(homeCoords, personData, numWaypoints);
-      const segments = classifyRoute(points);
-      const { roadDist, shipDist, totalDist } = calculateSegmentDistances(segments);
-
-      journey.roadDistance = roadDist;
-      journey.shipDistance = shipDist;
-
-      const statsHtml = `
-        <div class="journey-stat-row">
-          <span class="stat-label"><span class="stat-dot road"></span> By Road</span>
-          <span class="stat-value">${roadDist.toFixed(1)} km</span>
-        </div>
-        <div class="journey-stat-row">
-          <span class="stat-label"><span class="stat-dot ship"></span> By Ship</span>
-          <span class="stat-value">${shipDist.toFixed(1)} km</span>
-        </div>
-        <div class="journey-stat-row" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 4px;">
-          <span class="stat-label"><span class="stat-dot total"></span> Total</span>
-          <span class="stat-value">${totalDist.toFixed(1)} km</span>
-        </div>
-      `;
-
-      document.getElementById('journeyStats').innerHTML = statsHtml;
-
-      // Reset button states
-      document.getElementById('startJourneyBtn').style.display = 'block';
-      document.getElementById('startJourneyBtn').disabled = false;
-      document.getElementById('startJourneyBtn').textContent = 'Start Journey';
+      document.getElementById('journeyStats').innerHTML = '<div style="color:#888; font-style:italic; font-size:13px;">Computing route via OSRM &amp; shipping lanes...</div>';
+      document.getElementById('startJourneyBtn').style.display = 'none';
       document.getElementById('resetJourneyBtn').style.display = 'none';
       document.getElementById('journeyProgress').style.display = 'none';
       document.getElementById('journeyCompleteMsg').style.display = 'none';
+
+      try {
+        // Generate full route (async — calls OSRM)
+        const segments = await generateFullRoute(homeCoords, personData);
+        journey.precomputedRoute = segments;
+
+        const { roadDist, shipDist, totalDist } = calculateSegmentDistances(segments);
+        journey.roadDistance = roadDist;
+        journey.shipDistance = shipDist;
+
+        const statsHtml = `
+          <div class="journey-stat-row">
+            <span class="stat-label"><span class="stat-dot road"></span> By Road</span>
+            <span class="stat-value">${roadDist.toFixed(1)} km</span>
+          </div>
+          <div class="journey-stat-row">
+            <span class="stat-label"><span class="stat-dot ship"></span> By Ship</span>
+            <span class="stat-value">${shipDist.toFixed(1)} km</span>
+          </div>
+          <div class="journey-stat-row" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 4px;">
+            <span class="stat-label"><span class="stat-dot total"></span> Total</span>
+            <span class="stat-value">${totalDist.toFixed(1)} km</span>
+          </div>
+        `;
+        document.getElementById('journeyStats').innerHTML = statsHtml;
+
+        document.getElementById('startJourneyBtn').style.display = 'block';
+        document.getElementById('startJourneyBtn').disabled = false;
+        document.getElementById('startJourneyBtn').textContent = 'Start Journey';
+
+        // Auto-start
+        if (!journey.isAnimating && !journey.isComplete) {
+          setTimeout(() => startJourney(), 600);
+        }
+      } catch (err) {
+        document.getElementById('journeyStats').innerHTML = '<div style="color:#c66; font-size:13px;">Route computation failed. Try again.</div>';
+        document.getElementById('startJourneyBtn').style.display = 'block';
+        document.getElementById('startJourneyBtn').disabled = false;
+        document.getElementById('startJourneyBtn').textContent = 'Retry';
+      }
     }
 
     // ─── Zoom Level for Distance ────────────────────────────────────
@@ -1184,6 +1530,13 @@
       if (!homeCoords || !personData) return;
       if (journey.isAnimating) return;
 
+      // Use pre-computed route, or fall back to re-computing
+      const segments = journey.precomputedRoute;
+      if (!segments || segments.length === 0) {
+        computeAndShowJourney();
+        return;
+      }
+
       // Clear previous journey visuals
       clearJourneyVisuals();
 
@@ -1193,16 +1546,15 @@
         distanceLine = null;
       }
 
-      // Generate route
-      const numWaypoints = 300;
-      const points = generateGreatCirclePoints(homeCoords, personData, numWaypoints);
-      const segments = classifyRoute(points);
+      // Flatten all points for animation indexing
+      const allPoints = [];
+      segments.forEach(seg => allPoints.push(...seg.points));
 
       // Calculate total distance for zoom decisions
       const totalDist = haversineDistance(homeCoords.lat, homeCoords.lng, personData.lat, personData.lng);
 
       journey.segments = segments;
-      journey.allPoints = points;
+      journey.allPoints = allPoints;
       journey.currentPointIndex = 0;
       journey.isAnimating = true;
       journey.isComplete = false;
@@ -1239,7 +1591,7 @@
 
       // Create vehicle marker
       const startType = segments.length > 0 ? segments[0].type : 'road';
-      journey.vehicleMarker = L.marker([points[0].lat, points[0].lng], {
+      journey.vehicleMarker = L.marker([allPoints[0].lat, allPoints[0].lng], {
         icon: createVehicleIcon(startType),
         zIndexOffset: 1000
       }).addTo(map);
@@ -1420,8 +1772,30 @@
 
       document.getElementById('mapLegend').style.display = 'none';
 
-      // Reset journey section UI
-      showJourneySection();
+      // Show pre-computed stats and start button (route already computed)
+      if (journey.precomputedRoute) {
+        const { roadDist, shipDist, totalDist } = calculateSegmentDistances(journey.precomputedRoute);
+        document.getElementById('journeyStats').innerHTML = `
+          <div class="journey-stat-row">
+            <span class="stat-label"><span class="stat-dot road"></span> By Road</span>
+            <span class="stat-value">${roadDist.toFixed(1)} km</span>
+          </div>
+          <div class="journey-stat-row">
+            <span class="stat-label"><span class="stat-dot ship"></span> By Ship</span>
+            <span class="stat-value">${shipDist.toFixed(1)} km</span>
+          </div>
+          <div class="journey-stat-row" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 4px;">
+            <span class="stat-label"><span class="stat-dot total"></span> Total</span>
+            <span class="stat-value">${totalDist.toFixed(1)} km</span>
+          </div>
+        `;
+        document.getElementById('startJourneyBtn').style.display = 'block';
+        document.getElementById('startJourneyBtn').disabled = false;
+        document.getElementById('startJourneyBtn').textContent = 'Replay Journey';
+        document.getElementById('resetJourneyBtn').style.display = 'none';
+        document.getElementById('journeyProgress').style.display = 'none';
+        document.getElementById('journeyCompleteMsg').style.display = 'none';
+      }
     }
 
     function clearJourneyVisuals() {
@@ -1485,6 +1859,7 @@
       // Stop any running animation
       if (journey.animationTimer) clearTimeout(journey.animationTimer);
       journey.isAnimating = false;
+      journey.precomputedRoute = null;
       clearJourneyVisuals();
 
       if (personMarker) map.removeLayer(personMarker);
