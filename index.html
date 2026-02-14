@@ -1071,30 +1071,31 @@
       ]},
     ];
 
-    // ─── Find Nearest Port ───────────────────────────────────────────
-    function findNearestPort(coords) {
-      let best = null;
-      let bestDist = Infinity;
-      for (const [id, port] of Object.entries(PORTS)) {
-        const d = haversineDistance(coords.lat, coords.lng, port.lat, port.lng);
-        if (d < bestDist) {
-          bestDist = d;
-          best = { id, ...port, dist: d };
-        }
-      }
-      return best;
+    // ─── Pick Random Port (from top-N nearest) ────────────────────────
+    function pickRandomPort(coords, topN = 3) {
+      const ranked = Object.entries(PORTS).map(([id, port]) => ({
+        id, ...port,
+        dist: haversineDistance(coords.lat, coords.lng, port.lat, port.lng)
+      }));
+      ranked.sort((a, b) => a.dist - b.dist);
+      const candidates = ranked.slice(0, topN);
+      return candidates[Math.floor(Math.random() * candidates.length)];
     }
 
-    // ─── Dijkstra Sea Route ──────────────────────────────────────────
+    // ─── Randomized Dijkstra Sea Route ──────────────────────────────
+    // Jitters edge weights so a different shipping path emerges each run
     function dijkstraSeaRoute(fromId, toId) {
       if (fromId === toId) return [fromId];
 
-      // Build adjacency list
+      // Build adjacency list with randomised weights
       const adj = {};
       Object.keys(PORTS).forEach(id => { adj[id] = []; });
 
       SHIPPING_EDGES.forEach(edge => {
-        const d = haversineDistance(PORTS[edge.from].lat, PORTS[edge.from].lng, PORTS[edge.to].lat, PORTS[edge.to].lng);
+        const base = haversineDistance(PORTS[edge.from].lat, PORTS[edge.from].lng, PORTS[edge.to].lat, PORTS[edge.to].lng);
+        // Random factor 0.3 – 1.7 → sometimes Suez, sometimes Cape route, etc.
+        const jitter = 0.3 + Math.random() * 1.4;
+        const d = base * jitter;
         adj[edge.from].push({ to: edge.to, dist: d });
         adj[edge.to].push({ to: edge.from, dist: d });
       });
@@ -1262,9 +1263,9 @@
         }
       }
 
-      // 2. Need ocean crossing — find nearest ports
-      const startPort = findNearestPort(start);
-      const endPort = findNearestPort(end);
+      // 2. Need ocean crossing — pick random ports from top 3 nearest
+      const startPort = pickRandomPort(start, 3);
+      const endPort = pickRandomPort(end, 3);
 
       if (startPort.id === endPort.id) {
         // Same port — fallback to great circle
