@@ -1227,13 +1227,25 @@
     }
 
     // ─── Detect Ocean Crossing ─────────────────────────────────────
+    function getContinent(lat, lng) {
+      // Americas (North + South)
+      if (lng >= -170 && lng <= -35) return 'americas';
+      // Australia / Oceania
+      if (lat <= -10 && lng >= 110) return 'oceania';
+      // Everything else: Europe, Asia, Africa, Middle East (road-connected)
+      return 'afroeurasia';
+    }
+
     function needsOceanCrossing(start, end) {
+      // Different continents → always needs ship
+      if (getContinent(start.lat, start.lng) !== getContinent(end.lat, end.lng)) return true;
+
+      // Same continent → check great circle for water (catches e.g. India→Japan)
       const testPoints = generateGreatCirclePoints(start, end, 60);
       let waterCount = 0;
       for (const p of testPoints) {
         if (!isLand(p.lat, p.lng)) waterCount++;
       }
-      // If more than 20% of the great-circle path is over water, ship is needed
       return waterCount > 12;
     }
 
@@ -1260,15 +1272,15 @@
         return [{ type: 'road', points: pts }];
       }
 
-      // 3. Road from start to departure port
-      const roadToPort = await getOSRMRoute(start, { lat: startPort.lat, lng: startPort.lng });
-
-      // 4. Sea route between ports (Dijkstra + shipping lanes)
+      // 3. Sea route between ports (Dijkstra + shipping lanes) — instant, no network
       const seaPath = dijkstraSeaRoute(startPort.id, endPort.id);
       const seaPoints = getShippingWaypoints(seaPath);
 
-      // 5. Road from arrival port to destination
-      const roadFromPort = await getOSRMRoute({ lat: endPort.lat, lng: endPort.lng }, end);
+      // 4. OSRM road legs (run both in parallel)
+      const [roadToPort, roadFromPort] = await Promise.all([
+        getOSRMRoute(start, { lat: startPort.lat, lng: startPort.lng }),
+        getOSRMRoute({ lat: endPort.lat, lng: endPort.lng }, end)
+      ]);
 
       // 6. Stitch segments
       const segments = [];
